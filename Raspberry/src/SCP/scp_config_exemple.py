@@ -1,22 +1,14 @@
 # SCP ACCOUNT CONFIG
-scp_account_id='s---------trial'
-scp_landscape_host='.hanatrial.ondemand.com'
+scp_account_id      = "s____trial"
+scp_landscape_host  = ".hanatrial.ondemand.com"
+port                = 443
+transport           = "websockets"
 
 # DEVICE CONFIG
-endpoint_certificate = "SCP/hanatrial.ondemand.com.crt"
-device_id="--------------------"
-oauth_credentials_for_device="------------------"
+endpoint_certif     = "SCP/hanatrial.ondemand.com.crt"
+device_id           = "_______"
+oauth_cred_device   = "_______"
 
 # TOPICS
-
-""" Cloud Message Type (cloud to device): 
-    -> instruction (String) """
-in_topic = "-------------------"
-
-
-""" Device Message Type (device to cloud):
-    -> timestamp (date)
-    -> temperature (float)
-    -> humidity (float)
-"""
-out_topic = "-------------------"
+in_topic            = "_______"
+out_topic           = "_______"

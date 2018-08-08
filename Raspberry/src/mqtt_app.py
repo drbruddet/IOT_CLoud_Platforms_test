@@ -1,8 +1,9 @@
 #!/usr/bin/python
 # -*- coding: latin-1 -*-
 
-import time, sys, threading
+import time, sys, threading, datetime, ssl
 import paho.mqtt.client as mqtt
+import jwt
 from AWSIoTPythonSDK.MQTTLib import AWSIoTMQTTClient
 from concurrent import futures
 
@@ -13,11 +14,12 @@ except ImportError:
 
 # Application Config
 """CLOUD DECLARATION"""
-CLOUD_SCP     = "SCP"
-CLOUD_FOUNDRY = "SCF"
-CLOUD_AWS     = "AWS"
-CLOUD_AZURE   = "AZR"
-CLOUD_GOOGLE  = "GCP"
+CLOUD_SCP = "SCP" # SAP CLoud Platform Néo
+CLOUD_FDY = "SCF" # SAP Cloud Platform Cloud Foundry
+CLOUD_AWS = "AWS" # Amazon Web Services
+CLOUD_AZR = "AZR" # Microsoft Azure
+CLOUD_GCP = "GCP" # Google Cloud Platform
+CLOUD_IBM = "IBM" # IBM Watson
 
 """DHT11 SENSOR CONFIG"""
 DHT11_INSTRUCTION   = "DHT11"
@@ -26,6 +28,10 @@ RECEIVE_DHT11_INFOS = 0
 MEASURES            = [0, 0]
 
 # PARSING FUNCTIONS
+def error_str(rc):
+    """Convert a Paho error to a human readable string."""
+    return '{}: {}'.format(rc, mqtt.error_string(rc))
+
 def parse_scp_message(payload, search):
    """ Parse SCP Instruction message """
    subString = payload[payload.find(search):]
@@ -48,7 +54,7 @@ def publish_DHT11_measures(measures):
          message += '}]}'
          client.publish(client.pub_topic, message)
       elif client.client_type == CLOUD_REQUEST == CLOUD_AWS:
-         message = '"{temperature":' + str(measures[0])
+         message = '{"temperature":' + str(measures[0])
          message += ', "humidity":' + str(measures[1])
          message += ', "timestamp":' + str(int(time.time()))
          message += '}'
@@ -88,19 +94,19 @@ def format_subscription(topics):
 # CONNECTION FUNCTIONS
 def on_connect(client, obj, flags, rc):
     """ on_connect PAHO function """
-    print("on_connect   - rc: " + str(rc))
+    print("on_connect   - rc: " + error_str(rc))
     client.connected_flag = True
 
 def cleanup():
    """ Disconnect Client """
    for x in clients:
       client = x[0]
-      if client.connected_flag: 
+      if client.connected_flag:
          client.disconnect()
 
 def on_disconnect(client, userdata, rc):
     """ on_disconnect PAHO function """
-    print("disconnecting reason  " + str(rc))
+    print("disconnecting reason  " + error_str(rc))
     client.connected_flag = False
 
 # MESSAGE FUNCTIONS
@@ -135,6 +141,7 @@ def on_message_aws(client, userdata, message):
 def on_message(client, userdata, message):
    """ PAHO on_message function """
    payload = str(message.payload.decode("utf-8"))
+   print(payload)
    if client.client_type == CLOUD_SCP:
       print("(SCP-message) " + str(message.topic) + " --> " + payload)
       global CLOUD_REQUEST
@@ -146,10 +153,29 @@ def on_message(client, userdata, message):
       on_message_broker(payload, message.topic, client.raw_sub_topic)
 
 # MULTI-CLIENTS THREADING RELATIVE FUNCTIONS
+def create_jwt(project_id, private_key_file, algorithm):
+   """ Creates a JWT (https://jwt.io) to establish an MQTT connection.
+       Return An MQTT generated from the given project_id and private key, which expires in 20 minutes.
+       After 20 minutes, your client will be disconnected, and a new JWT will have to be generated. """
+   token = {
+       'iat': datetime.datetime.utcnow(), # The time that the token was issued at
+       'exp': datetime.datetime.utcnow() + datetime.timedelta(minutes=60), # The time the token expires.
+       'aud': project_id # The audience field should always be set to the GCP project id.
+   }
+   with open(private_key_file, 'r') as f:
+      private_key = f.read()
+   print('Creating JWT using {} from private key file {}'.format(algorithm, private_key_file))
+   return jwt.encode(token, private_key, algorithm=algorithm)
+
 def create_clients():
    """ Create the clients for the broker_list """
    for i in range(len(broker.list)):
-      if broker.list[i]["client_type"] == CLOUD_AWS:
+
+      if broker.list[i]["client_type"] == CLOUD_GCP:
+         client = mqtt.Client(client_id=broker.list[i]["client_name"])
+         client.username_pw_set(username='unused', password=create_jwt(broker.list[i]["client_name"], broker.list[i]["private_key_file"], broker.list[i]["algorithm"]))
+         #client.tls_set(ca_certs=broker.list[i]["certificate"], tls_version=ssl.PROTOCOL_TLSv1_2)
+      elif broker.list[i]["client_type"] == CLOUD_AWS:
          client = AWSIoTMQTTClient(broker.list[i]["client_name"], useWebsocket=True)
          client.configureEndpoint(broker.list[i]["broker_name"], broker.list[i]["port"])
          client.configureCredentials(broker.list[i]["certificate"])
@@ -176,6 +202,8 @@ def create_clients():
       client.sub_topic = format_subscription(broker.list[i]["sub_topic"])
       client.connected_flag = False
       client.running_loop = True
+      if client.client_type == CLOUD_IBM:
+         print client.__dict__
       clients.append([client, False])
 
 def multi_loop():
@@ -193,7 +221,7 @@ def connect_and_subscribe(client, keep_alive):
          res = client.connect()
          client.connected_flag = True
       else:
-         res = client.connect(client.broker_name, client.port_number, keep_alive)
+         res = client.connect(client.broker_name, client.port_number)
    except:
       print("Connexion Failed to " + str(broker_name))
 
@@ -201,7 +229,7 @@ def connect_and_subscribe(client, keep_alive):
       if client.client_type == CLOUD_AWS:
          r = client.subscribe(client.sub_topic, 1, on_message_aws)
       else:
-         r = client.subscribe(client.sub_topic)
+         r = client.subscribe(client.sub_topic, qos=0)
    except Exception as e:
       print("Error to subscribe: " + str(e))
 
@@ -225,6 +253,6 @@ t = threading.Thread(target=multi_loop)
 t.start()
 connect_brokers()
 
-#time.sleep(10)
-#M_loop_flag = False
-#cleanup()
+time.sleep(10)
+M_loop_flag = False
+cleanup()
