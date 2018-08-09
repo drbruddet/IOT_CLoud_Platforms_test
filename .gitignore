@@ -1,6 +1,7 @@
-Raspberry/src/AWS/root_ca.pem
-Raspberry/src/AWS/aws_config.py
-Raspberry/src/SCP/scp_config.py
+Raspberry/src/config/cloud/AWS/aws_config.py
+Raspberry/src/config/cloud/AWS/*.pem
+
+Raspberry/src/config/cloud/SCP/scp_config.py
 
 Raspberry/*.pyc
 Raspberry/*.py~
@@ -8,6 +9,10 @@ Raspberry/src/*.pyc
 Raspberry/src/*.py~
 Raspberry/src/**/*.pyc
 Raspberry/src/**/*.py~
+Raspberry/src/**/**/*.pyc
+Raspberry/src/**/**/*.py~
+Raspberry/src/**/**/**/*.pyc
+Raspberry/src/**/**/**/*.py~
 
-Raspberry/src/GCP/*
-Raspberry/src/IBM/*
+Raspberry/src/config/cloud/GCP/*
+Raspberry/src/config/cloud/IBM/*
