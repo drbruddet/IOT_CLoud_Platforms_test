@@ -10,5 +10,6 @@ CLIENTS = ["BROKER", "AWS"]
 SENSORS = [{
    "name": "DHT11",
    "instruction": "DHT11",
-   "data": [0, 0]
+   "data": [0, 0],
+   "pub_topics": ["temperature", "humidity"]
 }]

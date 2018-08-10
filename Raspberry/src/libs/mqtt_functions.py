@@ -5,13 +5,13 @@ def error_str(rc):
    """Convert a Paho error to a human readable string."""
    return '{}: {}'.format(rc, mqtt.error_string(rc))
 
-def on_publish(mqttc, obj, message_id):
+def on_publish(client, obj, message_id):
    """ on_publish PAHO function """
-   print("on_publish   - message_id: " + str(message_id))
+   print(client.broker_name + " published on " + str(client.pub_topic))
 
 def on_subscribe(client, obj, message_id, granted_qos):
    """ on_subscribe PAHO function """
-   print("on_subscribe - message_id: " + str(message_id) + " / qos: " + str(granted_qos))
+   print(client.broker_name + " subscribed on " + str(client.sub_topic))
 
 def format_subscription(topics):
    """ Format subscribtion to retreive topics """
@@ -23,7 +23,7 @@ def format_subscription(topics):
 
 def on_connect(client, obj, flags, rc):
    """ on_connect PAHO function """
-   print("on_connect   - rc: " + error_str(rc))
+   print(client.broker_name + ": CONNECTED: " + error_str(rc))
    client.connected_flag = True
 
 def cleanup(clients):
@@ -35,7 +35,7 @@ def cleanup(clients):
 
 def on_disconnect(client, userdata, rc):
    """ on_disconnect PAHO function """
-   print("disconnecting reason  " + error_str(rc))
+   print(client.broker_name + " disconnecting:  " + error_str(rc))
    client.connected_flag = False
 
 def create_jwt(project_id, private_key_file, algorithm):

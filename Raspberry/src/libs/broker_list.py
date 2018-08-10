@@ -13,6 +13,13 @@ CL = {
 CLIENTS = config.CLIENTS
 list = []
 
+def sub_topics(sensors):
+   topics = []
+   for i in range(len(sensors)):
+      for j in range(len(config.SENSORS[i]["pub_topics"])):
+         topics.append(config.SENSORS[i]["name"] + "/" + config.SENSORS[i]["pub_topics"][j])
+   return topics
+
 if "BROKER" in CLIENTS:
    list.append({
       "broker_name": "127.0.0.1",
@@ -23,7 +30,7 @@ if "BROKER" in CLIENTS:
       "port": 1883,
       "ssl": False,
       "transport": "tcp",
-      "sub_topic": ["DHT11/temperature", "DHT11/humidity"],
+      "sub_topic": sub_topics(config.SENSORS),
       "pub_topic": "IN/instruction",
       "client_type": "gateway"
    })
