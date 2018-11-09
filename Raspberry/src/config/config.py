@@ -1,7 +1,8 @@
 # CLIENT LIST:
-# - BROKER (local gateway) *Mondatory*
+# - BROKER (local gateway) *Mandatory*
 # - IBM (Watson IoT Platform)
 # - SCP (Sap Cloud Platform NEO)
+# - SCF (Sap Cloud Platform Cloud Foundry)
 # - AWS (Amazon Web Services)
 # - GCP (Google Cloud Platform)
 CLIENTS = ["BROKER", "AWS"]
